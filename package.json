@@ -1,44 +1,38 @@
-{
-    "name": "cheating-daddy",
-    "productName": "cheating-daddy",
-    "version": "0.8.0",
-    "description": "cheating daddy",
-    "main": "src/index.js",
-    "scripts": {
-        "start": "electron-forge start",
-        "package": "electron-forge package",
-        "make": "electron-forge make",
-        "publish": "electron-forge publish",
-        "lint": "echo \"No linting configured\""
-    },
-    "keywords": [
-        "cheating daddy",
-        "cheating daddy ai",
-        "cheating daddy ai assistant",
-        "cheating daddy ai assistant for interviews",
-        "cheating daddy ai assistant for interviews"
-    ],
-    "author": {
-        "name": "sohzm",
-        "email": "sohambharambe9@gmail.com"
-    },
-    "license": "GPL-3.0",
-    "dependencies": {
-        "@google/genai": "^1.2.0",
-        "electron-squirrel-startup": "^1.0.1",
-        "ws": "^8.19.0"
-    },
-    "devDependencies": {
-        "@electron-forge/cli": "^7.8.1",
-        "@electron-forge/maker-deb": "^7.8.1",
-        "@electron-forge/maker-dmg": "^7.8.1",
-        "@electron-forge/maker-rpm": "^7.8.1",
-        "@electron-forge/maker-squirrel": "^7.8.1",
-        "@electron-forge/maker-zip": "^7.8.1",
-        "@electron-forge/plugin-auto-unpack-natives": "^7.8.1",
-        "@electron-forge/plugin-fuses": "^7.8.1",
-        "@electron/fuses": "^1.8.0",
-        "@reforged/maker-appimage": "^5.0.0",
-        "electron": "^30.0.5"
-    }
+# OpenAI support
+
+OpenAI is called from the Electron **main process** through IPC. Your API key is read from the
+`OPENAI_API_KEY` environment variable and is never sent to the renderer.
+
+## Setup
+
+1. Install dependencies: `npm install`
+2. Create your env file: `cp .env.example .env`
+3. Set your key in `.env`: `OPENAI_API_KEY=your_key_here`
+4. Start the app: `npm start`
+
+`.env` is git-ignored. Never commit it or paste your key into chats or issues.
+
+## Usage from the renderer
+
+The renderer runs with `nodeIntegration` enabled, so it can use `ipcRenderer` directly:
+
+```js
+const { ipcRenderer } = require('electron');
+
+const configured = await ipcRenderer.invoke('openai:is-configured');
+const result = await ipcRenderer.invoke('openai:chat', {
+    model: 'gpt-4o-mini', // optional
+    messages: [{ role: 'user', content: 'Hello!' }],
+});
+
+if (result.success) {
+    console.log(result.data.text);
+} else {
+    console.error(result.error);
 }
+```
+
+## Notes
+
+- This adds OpenAI alongside the existing Gemini/Groq flow. It does not change the default provider.
+- Requests are validated in the main process (roles, size limits) before being sent to OpenAI.
